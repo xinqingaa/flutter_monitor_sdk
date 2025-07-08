@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_monitor_sdk/src/core/reporter.dart';
 
-// 用于页面路由监听
+// 用于页面路由监听  可以适当修改泛型 <Route<dynamic>>
 class MonitorRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   final Reporter _reporter;
   final Map<String, DateTime> _pagePushTimes = {};

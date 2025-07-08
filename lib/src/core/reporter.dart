@@ -31,10 +31,12 @@ class Reporter {
     // 异步获取设备信息
     _fetchDeviceInfo();
 
-    // 1. 启动定时器，每10秒尝试上报一次数据。
-    _batchTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      _flush();
-    });
+    // 1. 根据配置 决定是否启动定时器，每10秒尝试上报一次数据。
+    if (_config.enablePeriodicReporting) {
+      _batchTimer = Timer.periodic(_config.periodicReportDuration, (timer) {
+        _flush();
+      });
+    }
 
     // 2. 监听App生命周期，在App隐藏、暂停或分离时，立即上报数据，防止数据丢失。
     _lifecycleListener = AppLifecycleListener(
@@ -122,10 +124,12 @@ class Reporter {
       // 来源: _fetchDeviceInfo() 方法。
       'deviceInfo': _deviceInfo,
     };
+    print("event:$event");
+
     _eventQueue.add(event);
 
-    // 如果队列中的事件数量达到20个，也立即上报，不等10秒的定时器。
-    if (_eventQueue.length >= 20) {
+    // 如果队列中的事件数量达到 界限 个，也立即上报，不等10秒的定时器。
+    if (_eventQueue.length >= _config.batchReportSize) {
       _flush();
     }
   }

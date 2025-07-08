@@ -1,21 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_monitor_sdk/src/core/monitor_config.dart';
-import 'package:flutter_monitor_sdk/src/core/reporter.dart';
-import 'package:flutter_monitor_sdk/src/modules/behavior_monitor.dart';
-import 'package:flutter_monitor_sdk/src/modules/error_monitor.dart';
-import 'package:flutter_monitor_sdk/src/modules/performance_monitor.dart';
+import 'monitor_config.dart';
+import 'reporter.dart';
+import '../modules/behavior_monitor.dart';
+import '../modules/error_monitor.dart';
+import '../modules/performance_monitor.dart';
 
-/// A singleton binding that glues all the monitoring services together.
-/// It's the internal core of the SDK.
+/// 一个单例绑定类，它将所有监控模块粘合在一起。
+/// 这是 SDK 内部的核心枢纽。
 class MonitorBinding {
-  // --- Singleton Setup ---
+  // --- 单例模式设置 ---
 
-  /// Private constructor to ensure it's only created internally.
+  /// 私有构造函数，确保该类只能在内部被实例化。
+  ///
+  /// [config] 是SDK的配置对象。
+  /// [appStartTime] 是应用启动的精确时间，用于计算启动性能。
   MonitorBinding._(this.config, {required DateTime appStartTime}) {
-    // 1. Initialize the reporter first, as other modules depend on it.
+    // 1. 首先初始化上报器（Reporter），因为其他模块都依赖它。
     reporter = Reporter(config);
 
-    // 2. Initialize individual monitoring modules if they are enabled in the config.
+    // 2. 根据配置，决定是否初始化各个监控模块。
     if (config.enableErrorMonitor) {
       errorMonitor = ErrorMonitor(reporter);
       errorMonitor.init();
@@ -23,58 +25,59 @@ class MonitorBinding {
 
     if (config.enablePerformanceMonitor) {
       performanceMonitor = PerformanceMonitor(reporter);
-      // Pass the app start time to the performance monitor for launch time calculation.
+      // 将 App 启动时间传递给性能监控器，用于计算启动耗时。
       performanceMonitor.init(appStartTime);
     }
 
     if (config.enableBehaviorMonitor) {
       behaviorMonitor = BehaviorMonitor(reporter);
-      // Behavior monitor might also have an init for things like lifecycle listeners
+      // 行为监控器也可能有自己的初始化逻辑，例如监听App生命周期。
       behaviorMonitor.init();
     }
   }
 
-  /// The single, static instance of the binding.
+  /// 静态的、私有的单例实例。
   static MonitorBinding? _instance;
 
-  /// Public accessor for the singleton instance.
-  /// Throws an assertion error if accessed before initialization.
+  /// 公开的、用于获取单例实例的静态 getter。
+  /// 如果在初始化之前就尝试访问，会触发断言错误。
   static MonitorBinding get instance {
     assert(_instance != null,
-      'MonitorBinding has not been initialized. Call FlutterMonitorSDK.init() first.');
+    'MonitorBinding 尚未初始化，请先调用 FlutterMonitorSDK.init()。');
     return _instance!;
   }
 
-  // --- Initialization Method ---
+  // --- 初始化方法 ---
 
-  /// This is the main entry point for creating and setting up the binding.
-  /// It's called by the public-facing `FlutterMonitorSDK.init()`.
+  /// 这是创建和设置 MonitorBinding 的主要入口点。
+  /// 它由公开的 FlutterMonitorSDK.init() 方法调用。
   static void init({required MonitorConfig config, required DateTime appStartTime}) {
     if (_instance != null) {
-      print("Warning: MonitorBinding has already been initialized.");
+      print("警告: MonitorBinding 已经被初始化过了。");
       return;
     }
+    // 正确调用私有构造函数并赋值给私有实例
     _instance = MonitorBinding._(config, appStartTime: appStartTime);
   }
 
-  // --- Publicly Accessible Services ---
+  // --- 可供内部访问的服务 ---
 
-  /// The configuration for the SDK.
+  /// SDK 的配置对象。
   final MonitorConfig config;
 
-  /// The reporter service for sending data.
+  /// 用于发送数据的上报服务。
   late final Reporter reporter;
 
-  /// The error monitoring service.
+  /// 错误监控服务。
   late final ErrorMonitor errorMonitor;
 
-  /// The performance monitoring service.
+  /// 性能监控服务。
   late final PerformanceMonitor performanceMonitor;
 
-  /// The behavior monitoring service.
+  /// 行为监控服务。
   late final BehaviorMonitor behaviorMonitor;
 
-  /// A method to dispose resources when the app is closing, if necessary.
+  /// 在 App 关闭时，用于释放资源的方法。
   void dispose() {
     reporter.dispose();
   }
