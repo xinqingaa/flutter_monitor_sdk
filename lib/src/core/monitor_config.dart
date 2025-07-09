@@ -5,6 +5,7 @@ class MonitorConfig {
   final bool enableErrorMonitor; // 监听报错
   final bool enablePerformanceMonitor; // 监听性能
   final bool enableBehaviorMonitor; // 监听用户行为
+  final bool enableJankMonitor; // 新增卡顿监控开关
 
   final bool enablePeriodicReporting; // 是否开启定时上报，默认为 true
   final Duration periodicReportDuration; // 定时上报的间隔，默认为 20 秒
@@ -21,6 +22,7 @@ class MonitorConfig {
     this.enablePerformanceMonitor = true,
     this.enableBehaviorMonitor = true,
     this.enablePeriodicReporting = true,
+    this.enableJankMonitor = true,
     this.periodicReportDuration = const Duration(seconds: 20),
     this.batchReportSize = 10,
     this.userId,

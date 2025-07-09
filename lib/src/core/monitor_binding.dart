@@ -1,3 +1,4 @@
+import '../modules/jank_monitor.dart';
 import 'monitor_config.dart';
 import 'reporter.dart';
 import '../modules/behavior_monitor.dart';
@@ -7,6 +8,10 @@ import '../modules/performance_monitor.dart';
 /// 一个单例绑定类，它将所有监控模块粘合在一起。
 /// 这是 SDK 内部的核心枢纽。
 class MonitorBinding {
+
+  late final JankMonitor jankMonitor; // JankMonitor 实例
+  String? _currentPage; // 用于给 JankMonitor 提供当前页面信息
+
   // --- 单例模式设置 ---
 
   /// 私有构造函数，确保该类只能在内部被实例化。
@@ -17,23 +22,36 @@ class MonitorBinding {
     // 1. 首先初始化上报器（Reporter），因为其他模块都依赖它。
     reporter = Reporter(config);
 
+
+
     // 2. 根据配置，决定是否初始化各个监控模块。
     if (config.enableErrorMonitor) {
       errorMonitor = ErrorMonitor(reporter);
       errorMonitor.init();
     }
 
+    //  3. Performance Monitor 先于 JankMonitor 初始化
     if (config.enablePerformanceMonitor) {
       performanceMonitor = PerformanceMonitor(reporter);
       // 将 App 启动时间传递给性能监控器，用于计算启动耗时。
       performanceMonitor.init(appStartTime);
+      // 监听路由变化，更新当前页面
+      performanceMonitor.routeObserver.onPageRoutePushed = (name) => _currentPage = name;
     }
 
+    // 4. enableBehaviorMonitor 初始化
     if (config.enableBehaviorMonitor) {
       behaviorMonitor = BehaviorMonitor(reporter);
       // 行为监控器也可能有自己的初始化逻辑，例如监听App生命周期。
       behaviorMonitor.init();
     }
+
+    // 5. enableJankMonitor 初始化UI卡顿
+    if (config.enableJankMonitor) {
+      jankMonitor = JankMonitor(reporter, getCurrentPage: () => _currentPage as String);
+      jankMonitor.init();
+    }
+
   }
 
   /// 静态的、私有的单例实例。
@@ -76,6 +94,7 @@ class MonitorBinding {
 
   /// 行为监控服务。
   late final BehaviorMonitor behaviorMonitor;
+
 
   /// 在 App 关闭时，用于释放资源的方法。
   void dispose() {

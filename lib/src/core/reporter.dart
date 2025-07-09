@@ -86,7 +86,6 @@ class Reporter {
   /// 核心方法：添加一个事件到队列。
   /// 这是所有监控器与Reporter交互的入口。
   void addEvent(String eventCategory, Map<String, dynamic> data) {
-
     // --- 数据丰富 (Data Enrichment) ---
     // 这是关键步骤。Reporter 在这里将通用信息附加到每个事件上。
     final event = {
@@ -99,7 +98,6 @@ class Reporter {
       'data': data,
 
       // --- 以下是 Reporter 自动附加的通用字段 ---
-
       // 'timestamp': 事件在客户端被捕获的时间 (UTC)。
       // 来源: Dart 核心库。
       'timestamp': DateTime.now().toUtc().toIso8601String(),
@@ -124,10 +122,8 @@ class Reporter {
       // 来源: _fetchDeviceInfo() 方法。
       'deviceInfo': _deviceInfo,
     };
-    print("event:$event");
-
+    // print("event:$event");
     _eventQueue.add(event);
-
     // 如果队列中的事件数量达到 界限 个，也立即上报，不等10秒的定时器。
     if (_eventQueue.length >= _config.batchReportSize) {
       _flush();

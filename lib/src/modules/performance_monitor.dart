@@ -6,6 +6,7 @@ import 'package:flutter_monitor_sdk/src/core/reporter.dart';
 class MonitorRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   final Reporter _reporter;
   final Map<String, DateTime> _pagePushTimes = {};
+  void Function(String?)? onPageRoutePushed; // 用于通知外部页面已切换
 
   MonitorRouteObserver(this._reporter);
 
@@ -15,9 +16,9 @@ class MonitorRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     if (route is PageRoute && route.settings.name != null) {
       final pageName = route.settings.name!;
       _pagePushTimes[pageName] = DateTime.now();
-
+      onPageRoutePushed?.call(pageName); // 触发回调
       // 上报PV
-      _reporter.addEvent('behavior', {'type': 'pv', 'page': pageName});
+      _reporter.addEvent('z', {'type': 'pv', 'page': pageName});
     }
   }
 

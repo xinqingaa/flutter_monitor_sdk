@@ -1,6 +1,6 @@
 # Flutter Monitor SDK
 
-一个为 Flutter 应用设计的、轻量级且功能全面的前端监控 SDK。它可以帮助开发者轻松地收集和上报应用中的**错误**、**性能指标**和**用户行为**数据。
+一个为 Flutter 应用设计的、轻量级且功能全面的前端监控 SDK。它可以帮助开发者轻松地收集和上报应用中的**错误**、**性能指标**和**用户行为**数据，从而快速定位问题、优化体验。
 
 ## ✨ 设计理念
 
@@ -17,11 +17,12 @@
 *   **性能监控**:
     *   App 启动耗时
     *   页面加载（渲染）耗时
-    *   网络 API 请求性能（成功率、耗时、状态码）
+    *   网络 API 请求性能（成功率、耗时、状态码 ，支持 Dio 和原生 http 包）
+    *   UI 卡顿监控 (基于连续慢帧序列的智能检测)
 *   **用户行为监控**:
     *   页面浏览（PV）
     *   页面停留时长
-    *   关键元素点击（UV）
+    *   关键元素点击（UV ， 通过 MonitoredGestureDetector 手动埋点）
 *   **灵活的上报策略**: 支持定时、定量批量上报，并在 App退出时进行数据抢救，确保数据不丢失。
 *   **丰富的通用信息**: 每条上报数据都会自动附加设备信息、用户信息、平台、App Key 等通用字段。
 
@@ -40,13 +41,19 @@ SDK 通过监听两个 Flutter 核心的错误回调来捕获全局异常：
 
 *   **App 启动耗时**: 在 `main()` 函数开始时记录一个时间戳 `appStartTime`。SDK 初始化后，通过 `WidgetsBinding.instance.addPostFrameCallback` 监听第一帧渲染完成的事件，两个时间点相减即为 App 的启动耗时。
 
+* **UI 卡顿监控**: SDK 并非简单地监控单帧超时，而是采用更科学的连续慢帧序列检测机制。
+    1. 根据设备刷新率计算出单帧的预算时间（如 16.7ms）。
+    2. 当连续多帧（可配置，如3帧）的耗时都超过了预算时间的某个倍数（如2倍），SDK 才认为发生了一次用户可感知的卡顿。
+    3. 此时，SDK 会将这次连续卡顿聚合成一条上报事件，包含卡顿的帧数、最大耗时、平均耗时等丰富信息，避免了日志风暴。
+
 *   **页面加载/渲染耗时**:
     1.  通过注入一个自定义的 `RouteObserver`，在 `didPush` 方法被调用时记录页面 `push` 的时间。
     2.  在目标页面的 `initState` 中，通过 `WidgetsBinding.instance.addPostFrameCallback` 监听该页面第一帧渲染完成。
     3.  在回调中，用当前时间减去 `push` 时记录的时间，得到页面的加载耗时。
 
 *   **API 请求监控**:
-    *   提供一个 `MonitorDioInterceptor`（目前支持 `Dio` 库）。
+    *   `Dio` 库 提供一个 `MonitorDioInterceptor`
+    *   `http`: 提供一个 `MonitoredHttpClient` 装饰器类
     *   在 `onRequest` 中记录请求开始时间。
     *   在 `onResponse`（成功）或 `onError`（失败）中，计算总耗时，并收集 URL、方法、状态码、响应数据等信息进行上报。
 
@@ -79,7 +86,7 @@ dependencies:
   flutter_monitor_sdk:
     git:
       url: https://gitee.com/your_username/flutter_monitor_sdk.git # 替换为你的仓库地址
-      ref: v0.0.1 # 推荐使用 tag 来锁定版本
+      ref: v0.0.1 # 使用 tag 来锁定版本
 ```
 
 然后运行 `flutter pub get`。

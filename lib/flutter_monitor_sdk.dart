@@ -1,9 +1,10 @@
+import 'package:flutter_monitor_sdk/src/utIls/monitored_http_client.dart';
 import 'package:flutter_monitor_sdk/src/utils/monitored_gesture_detector.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 import 'flutter_monitor_sdk.dart';
 
-// 重新导出配置类和监控Widget，方便使用者导入
 export 'package:flutter_monitor_sdk/src/core/monitor_binding.dart';
 export 'package:flutter_monitor_sdk/src/core/monitor_config.dart';
 export 'package:flutter_monitor_sdk/src/modules/performance_monitor.dart';
@@ -30,6 +31,13 @@ class FlutterMonitorSDK {
     // SDK 内部负责创建拦截器实例，并传入所需的依赖（reporter）
     // 使用者无需关心其内部实现
     return MonitorDioInterceptor(MonitorBinding.instance.reporter);
+  }
+
+
+  static http.Client get httpClient {
+    assert(_isInitialized, '请先调用 FlutterMonitorSDK.init() 再使用 httpClient。');
+    // 同样，SDK 内部负责创建实例
+    return MonitoredHttpClient(MonitorBinding.instance.reporter, http.Client());
   }
 
 
