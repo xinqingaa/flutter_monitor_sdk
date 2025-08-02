@@ -1,5 +1,4 @@
 import 'package:flutter_monitor_sdk/src/utIls/monitored_http_client.dart';
-import 'package:flutter_monitor_sdk/src/utils/monitored_gesture_detector.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
@@ -12,7 +11,6 @@ export 'package:flutter_monitor_sdk/src/utils/monitored_gesture_detector.dart';
 
 
 
-
 class FlutterMonitorSDK {
   FlutterMonitorSDK._();
 
@@ -22,12 +20,16 @@ class FlutterMonitorSDK {
   static bool _isInitialized = false;
 
   static RouteObserver get routeObserver {
-    assert(_isInitialized, '请先调用 FlutterMonitorSDK.init() 再使用 routeObserver。');
+    if (!_isInitialized) {
+      throw SDKNotInitializedException('请先调用 FlutterMonitorSDK.init() 再使用 routeObserver。');
+    }
     return MonitorBinding.instance.performanceMonitor.routeObserver;
   }
 
   static Interceptor get dioInterceptor {
-    assert(_isInitialized, '请先调用 FlutterMonitorSDK.init() 再使用 dioInterceptor。');
+    if (!_isInitialized) {
+      throw SDKNotInitializedException('请先调用 FlutterMonitorSDK.init() 再使用 dioInterceptor。');
+    }
     // SDK 内部负责创建拦截器实例，并传入所需的依赖（reporter）
     // 使用者无需关心其内部实现
     return MonitorDioInterceptor(MonitorBinding.instance.reporter);
@@ -35,7 +37,9 @@ class FlutterMonitorSDK {
 
 
   static http.Client get httpClient {
-    assert(_isInitialized, '请先调用 FlutterMonitorSDK.init() 再使用 httpClient。');
+    if (!_isInitialized) {
+      throw SDKNotInitializedException('请先调用 FlutterMonitorSDK.init() 再使用 httpClient。');
+    }
     // 同样，SDK 内部负责创建实例
     return MonitoredHttpClient(MonitorBinding.instance.reporter, http.Client());
   }
@@ -69,4 +73,12 @@ class FlutterMonitorSDK {
     if (!_isInitialized) return;
     MonitorBinding.instance.reporter.addEvent(eventType, data);
   }
+}
+
+
+class SDKNotInitializedException implements Exception {
+  final String message;
+  SDKNotInitializedException(this.message);
+  @override
+  String toString() => 'SDKNotInitializedException: $message';
 }

@@ -99,5 +99,8 @@ class MonitorBinding {
   /// 在 App 关闭时，用于释放资源的方法。
   void dispose() {
     reporter.dispose();
+    if (config.enableJankMonitor) {
+      jankMonitor.dispose();
+    }
   }
 }

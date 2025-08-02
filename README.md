@@ -87,6 +87,11 @@ dependencies:
     git:
       url: https://gitee.com/your_username/flutter_monitor_sdk.git # 替换为你的仓库地址
       ref: v0.0.1 # 使用 tag 来锁定版本
+  # 本 SDK 需要以下对等依赖。请确保它们也存在于你的 dependencies 中
+  dependencies:
+  http: ^1.2.1
+  dio: ^5.4.3+1
+  device_info_plus: ^11.2.0
 ```
 
 然后运行 `flutter pub get`。

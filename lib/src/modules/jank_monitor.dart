@@ -49,30 +49,29 @@ class JankMonitor {
 
 
   void init() {
+    SchedulerBinding.instance.addTimingsCallback(_onTimings);
+  }
+
+  void _onTimings(List<FrameTiming> timings){
     const double defaultRefreshRate = 60.0;
     final double refreshRate = SchedulerBinding.instance.window.display.refreshRate;
     final double frameBudgetMs = 1000 / (refreshRate > 0 ? refreshRate : defaultRefreshRate);
     final double jankThresholdMs = frameBudgetMs * JANK_FRAME_TIME_MULTIPLIER;
+    print("JankMonitor initialized with new standard. Frame budget: ${frameBudgetMs.toStringAsFixed(2)}ms, Single frame jank threshold: ${jankThresholdMs.toStringAsFixed(2)}ms, Consecutive threshold: $CONSECUTIVE_JANK_THRESHOLD frames.");
+    for (final timing in timings) {
+      final totalDuration = timing.totalSpan.inMicroseconds / 1000.0;
 
-    print(
-        "JankMonitor initialized with new standard. Frame budget: ${frameBudgetMs.toStringAsFixed(2)}ms, Single frame jank threshold: ${jankThresholdMs.toStringAsFixed(2)}ms, Consecutive threshold: $CONSECUTIVE_JANK_THRESHOLD frames.");
-
-    SchedulerBinding.instance.addTimingsCallback((timings) {
-      for (final timing in timings) {
-        final totalDuration = timing.totalSpan.inMicroseconds / 1000.0;
-
-        // 判断当前帧是否卡顿
-        if (totalDuration > jankThresholdMs) {
-          // 如果是卡顿帧，累加计数器和耗时
-          _consecutiveJankFrames++;
-          _maxJankDurationInSequence = max(_maxJankDurationInSequence, totalDuration);
-          _totalJankDurationInSequence += totalDuration;
-        } else {
-          // 如果当前帧是流畅的，检查之前是否有连续卡顿
-          _checkAndReportJankSequence();
-        }
+      // 判断当前帧是否卡顿
+      if (totalDuration > jankThresholdMs) {
+        // 如果是卡顿帧，累加计数器和耗时
+        _consecutiveJankFrames++;
+        _maxJankDurationInSequence = max(_maxJankDurationInSequence, totalDuration);
+        _totalJankDurationInSequence += totalDuration;
+      } else {
+        // 如果当前帧是流畅的，检查之前是否有连续卡顿
+        _checkAndReportJankSequence();
       }
-    });
+    }
   }
 
   /// 检查并上报卡顿序列
@@ -98,5 +97,9 @@ class JankMonitor {
     _consecutiveJankFrames = 0;
     _maxJankDurationInSequence = 0;
     _totalJankDurationInSequence = 0;
+  }
+
+  void dispose() {
+    SchedulerBinding.instance.removeTimingsCallback(_onTimings);
   }
 }

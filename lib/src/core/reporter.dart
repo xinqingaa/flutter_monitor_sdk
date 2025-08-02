@@ -23,6 +23,9 @@ class Reporter {
   /// 缓存的设备信息，避免每次上报都重新获取。
   Map<String, dynamic>? _deviceInfo;
 
+  // 例如，最多缓存1000条事件
+  static const int maxQueueSize = 100;
+
   Reporter(this._config) {
     _init();
   }
@@ -122,6 +125,12 @@ class Reporter {
       // 来源: _fetchDeviceInfo() 方法。
       'deviceInfo': _deviceInfo,
     };
+    // 在添加前检查队列大小
+    if (_eventQueue.length >= maxQueueSize) {
+      // 队列已满，丢弃最旧的事件以腾出空间
+      _eventQueue.removeAt(0);
+    }
+
     // print("event:$event");
     _eventQueue.add(event);
     // 如果队列中的事件数量达到 界限 个，也立即上报，不等10秒的定时器。

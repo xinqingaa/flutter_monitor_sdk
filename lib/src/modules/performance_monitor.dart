@@ -18,7 +18,7 @@ class MonitorRouteObserver extends RouteObserver<PageRoute<dynamic>> {
       _pagePushTimes[pageName] = DateTime.now();
       onPageRoutePushed?.call(pageName); // 触发回调
       // 上报PV
-      _reporter.addEvent('z', {'type': 'pv', 'page': pageName});
+      _reporter.addEvent('behavior', {'type': 'pv', 'page': pageName});
     }
   }
 
