@@ -11,15 +11,6 @@ import 'package:http/http.dart' as http;
 class Reporter {
   final MonitorConfig _config;
 
-  /// 事件队列，用于缓存待上报的事件，实现批量上报。
-  final List<Map<String, dynamic>> _eventQueue = [];
-
-  /// 定时器，用于周期性地清空并上报队列中的事件。
-  Timer? _batchTimer;
-
-  /// App生命周期监听器，用于在App退出时确保所有缓存的事件都被上报。
-  late final AppLifecycleListener _lifecycleListener;
-
   /// 缓存的设备信息，避免每次上报都重新获取。
   Map<String, dynamic>? _deviceInfo;
 
@@ -34,19 +25,10 @@ class Reporter {
     // 异步获取设备信息
     _fetchDeviceInfo();
 
-    // 1. 根据配置 决定是否启动定时器，每10秒尝试上报一次数据。
-    if (_config.enablePeriodicReporting) {
-      _batchTimer = Timer.periodic(_config.periodicReportDuration, (timer) {
-        _flush();
-      });
+    // MODIFIED: 初始化所有在配置中提供的输出器。
+    for (final output in _config.outputs) {
+      output.init();
     }
-
-    // 2. 监听App生命周期，在App隐藏、暂停或分离时，立即上报数据，防止数据丢失。
-    _lifecycleListener = AppLifecycleListener(
-      onHide: () => _flush(isAppExiting: true),
-      onPause: () => _flush(isAppExiting: true),
-      onDetach: () => _flush(isAppExiting: true),
-    );
   }
 
   /// 使用 'device_info_plus' 插件异步获取设备信息。
@@ -125,56 +107,22 @@ class Reporter {
       // 来源: _fetchDeviceInfo() 方法。
       'deviceInfo': _deviceInfo,
     };
-    // 在添加前检查队列大小
-    if (_eventQueue.length >= maxQueueSize) {
-      // 队列已满，丢弃最旧的事件以腾出空间
-      _eventQueue.removeAt(0);
-    }
-
-    // print("event:$event");
-    _eventQueue.add(event);
-    // 如果队列中的事件数量达到 界限 个，也立即上报，不等10秒的定时器。
-    if (_eventQueue.length >= _config.batchReportSize) {
-      _flush();
-    }
-  }
-
-  /// 将队列中的所有事件发送到服务器。
-  Future<void> _flush({bool isAppExiting = false}) async {
-    if (_eventQueue.isEmpty) return;
-
-    // 复制队列内容，然后清空原队列，防止上报期间新事件进来导致数据错乱或丢失。
-    final List<Map<String, dynamic>> eventsToSend = List.from(_eventQueue);
-    _eventQueue.clear();
-
-    try {
-      // 将事件列表包装在 "events" 键下，符合服务器期望的格式。
-      final body = json.encode({'events': eventsToSend});
-      final headers = {'Content-Type': 'application/json'};
-
-      final response = await http.post(
-        Uri.parse(_config.serverUrl),
-        headers: headers,
-        body: body,
-      ).timeout(const Duration(seconds: 5));
-
-      if (response.statusCode != 200) {
-        print('Failed to report events: ${response.statusCode}');
-        // 上报失败，将事件重新加回队列，等待下次上报。
-        _eventQueue.addAll(eventsToSend);
-      } else {
-        print("Reported ${eventsToSend.length} events successfully.");
+    // 将丰富后的事件分发给每一个输出器。
+    for (final output in _config.outputs) {
+      try {
+        output.add(event);
+      } catch (e) {
+        print("Error while dispatching event to ${output.runtimeType}: $e");
       }
-    } catch (e) {
-      print('Error reporting events: $e');
-      // 发生异常（如超时、无网络），同样将事件加回队列。
-      _eventQueue.addAll(eventsToSend);
     }
   }
+
 
   /// 清理资源，在应用关闭时调用。
   void dispose() {
-    _batchTimer?.cancel();
-    _lifecycleListener.dispose();
+    // 调用所有输出器的 dispose 方法，让它们清理自己的资源。
+    for (final output in _config.outputs) {
+      output.dispose();
+    }
   }
 }

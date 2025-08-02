@@ -10,8 +10,6 @@ class HomePage extends StatelessWidget {
   final Dio dio;
   const HomePage({super.key, required this.dio});
 
-
-
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -34,7 +32,8 @@ class HomePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text("页面与性能监控", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("页面与性能监控",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const Divider(),
               ElevatedButton(
                 onPressed: () => Navigator.pushNamed(context, '/detail'),
@@ -55,7 +54,8 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade200),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade200),
                 onPressed: () async {
                   try {
                     await dio.get('https://api.github.com/non-existent-path');
@@ -67,15 +67,16 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-
               // --- http 包监控 ---
-              const Text("原生 http 包监控", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("原生 http 包监控",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const Divider(),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
                 onPressed: () async {
                   try {
-                    await monitoredHttpClient.get(Uri.parse('https://jsonplaceholder.typicode.com/posts/1'));
+                    await monitoredHttpClient.get(Uri.parse(
+                        'https://jsonplaceholder.typicode.com/posts/1'));
                     _showSnackBar(context, 'http API 调用成功! 请查看后端日志。');
                   } catch (e) {
                     _showSnackBar(context, 'http API 调用失败: $e');
@@ -85,10 +86,12 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade200),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal.shade200),
                 onPressed: () async {
                   try {
-                    await monitoredHttpClient.get(Uri.parse('https://jsonplaceholder.typicode.com/non-existent'));
+                    await monitoredHttpClient.get(Uri.parse(
+                        'https://jsonplaceholder.typicode.com/non-existent'));
                   } catch (e) {
                     _showSnackBar(context, 'http API 调用失败 (预期)! 请查看后端日志。');
                   }
@@ -105,7 +108,8 @@ class HomePage extends StatelessWidget {
                 onPressed: () {
                   // 这是一个非常耗时的同步操作，会阻塞UI线程，导致严重卡顿
                   final startTime = DateTime.now();
-                  while(DateTime.now().difference(startTime).inMilliseconds < 1000) {
+                  while (DateTime.now().difference(startTime).inMilliseconds <
+                      1000) {
                     // 空循环，消耗CPU时间
                   }
                   _showSnackBar(context, 'UI 线程已阻塞 300ms，卡顿事件已上报!');
@@ -117,14 +121,17 @@ class HomePage extends StatelessWidget {
               const JankTriggerButton(),
               const SizedBox(height: 10),
 
-              const Text("真实场景卡顿监控", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("真实场景卡顿监控",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const Divider(),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amberAccent),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ComplexListPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const ComplexListPage()),
                   );
                 },
                 child: const Text('进入复杂列表页面 (测试滑动卡顿)'),
@@ -142,13 +149,17 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade200),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade200),
                 onPressed: () {
                   showDialog(
                     context: context,
                     builder: (context) => const AlertDialog(
                       title: Text("布局错误"),
-                      content: Row(children: [Text("这段文字非常非常长，它会超出行的宽度限制，从而导致一个经典的布局溢出错误，这个错误会被FlutterError捕获。")]),
+                      content: Row(children: [
+                        Text(
+                            "这段文字非常非常长，它会超出行的宽度限制，从而导致一个经典的布局溢出错误，这个错误会被FlutterError捕获。")
+                      ]),
                     ),
                   );
                 },
@@ -156,7 +167,8 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              const Text("行为与自定义事件监控", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("行为与自定义事件监控",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const Divider(),
 
               // 案例1: 使用 MonitoredGestureDetector 监控关键点击
@@ -173,23 +185,25 @@ class HomePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   alignment: Alignment.center,
-                  child: const Text('设置用户ID (监控点击)', style: TextStyle(color: Colors.white)),
+                  child: const Text('设置用户ID (监控点击)',
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 10),
 
               // 案例2: 手动上报一个自定义事件
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.purple.shade100),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple.shade100),
                 onPressed: () {
                   FlutterMonitorSDK.instance.reportEvent(
-                    'user_share', // 自定义事件分类
-                    { // 自定义事件的数据
-                      'content_id': 'article_123',
-                      'content_type': 'article',
-                      'content_platform': 'wechat_timeline',
-                    }
-                  );
+                      'user_share', // 自定义事件分类
+                      {
+                        // 自定义事件的数据
+                        'content_id': 'article_123',
+                        'content_type': 'article',
+                        'content_platform': 'wechat_timeline',
+                      });
                   _showSnackBar(context, '已手动上报“分享”事件，请查看后端日志。');
                 },
                 child: const Text('手动上报“分享”事件'),
@@ -209,7 +223,8 @@ class HomePage extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.mail_outline, color: Theme.of(context).primaryColor),
+                        Icon(Icons.mail_outline,
+                            color: Theme.of(context).primaryColor),
                         const SizedBox(width: 8),
                         const Text("订阅我们的 Newsletter (监控点击)"),
                       ],
@@ -224,7 +239,6 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-
 
 /// 一个专门用于触发连续 UI 卡顿的按钮 (正确实现)
 /// 使用 AnimationController 来确保在每一帧都执行耗时操作。
@@ -245,7 +259,6 @@ class JankTriggerButton extends StatefulWidget {
 //    这是使用 AnimationController 的必要条件，它让 Widget 能接收到屏幕的垂直同步信号 (vsync)。
 class _JankTriggerButtonState extends State<JankTriggerButton>
     with SingleTickerProviderStateMixin {
-
   late final AnimationController _controller;
 
   @override
@@ -296,11 +309,10 @@ class _JankTriggerButtonState extends State<JankTriggerButton>
       onPressed: _controller.isAnimating
           ? null
           : () {
-        // 点击时，从头开始播放动画
-        _controller.forward(from: 0.0);
-      },
+              // 点击时，从头开始播放动画
+              _controller.forward(from: 0.0);
+            },
       child: const Text('触发连续UI卡顿 (新方法)'),
     );
   }
 }
-

@@ -9,7 +9,10 @@ export 'package:flutter_monitor_sdk/src/core/monitor_config.dart';
 export 'package:flutter_monitor_sdk/src/modules/performance_monitor.dart';
 export 'package:flutter_monitor_sdk/src/utils/monitored_gesture_detector.dart';
 export 'package:flutter_monitor_sdk/src/utils/page_render_monitor.dart';
-
+export 'package:flutter_monitor_sdk/src/outputs/monitor_output.dart';
+export 'package:flutter_monitor_sdk/src/outputs/log_monitor_output.dart';
+export 'package:flutter_monitor_sdk/src/outputs/http_output.dart';
+export 'package:flutter_monitor_sdk/src/outputs/custom_log_output.dart';
 
 class FlutterMonitorSDK {
   FlutterMonitorSDK._();
