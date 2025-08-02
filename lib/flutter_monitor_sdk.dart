@@ -8,7 +8,7 @@ export 'package:flutter_monitor_sdk/src/core/monitor_binding.dart';
 export 'package:flutter_monitor_sdk/src/core/monitor_config.dart';
 export 'package:flutter_monitor_sdk/src/modules/performance_monitor.dart';
 export 'package:flutter_monitor_sdk/src/utils/monitored_gesture_detector.dart';
-
+export 'package:flutter_monitor_sdk/src/utils/page_render_monitor.dart';
 
 
 class FlutterMonitorSDK {
