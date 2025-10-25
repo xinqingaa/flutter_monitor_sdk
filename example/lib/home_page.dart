@@ -4,8 +4,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_monitor_sdk/flutter_monitor_sdk.dart';
 
-import 'complex_list_page.dart';
-
 class HomePage extends StatelessWidget {
   final Dio dio;
   const HomePage({super.key, required this.dio});
@@ -127,14 +125,16 @@ class HomePage extends StatelessWidget {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amberAccent),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const ComplexListPage()),
-                  );
-                },
+                onPressed: () => Navigator.pushNamed(context, '/complex_list'),
                 child: const Text('进入复杂列表页面 (测试滑动卡顿)'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.cyan),
+                onPressed:() => Navigator.pushNamed(context, '/performance_test'),
+               
+                child: const Text('进入性能测试页面 (测试优化效果)'),
               ),
 
               const Text("错误监控", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -175,8 +175,19 @@ class HomePage extends StatelessWidget {
               MonitoredGestureDetector(
                 identifier: 'set-user-id-button',
                 onTap: () {
-                  FlutterMonitorSDK.instance.setUserId("user_007_bond");
-                  _showSnackBar(context, '用户 ID 已设置为 user_007_bond');
+                  FlutterMonitorSDK.instance.setUserInfo(
+                    const UserInfo(
+                      userId: "user_007_bond",
+                      userType: "premium",
+                      userTags: ["vip", "beta"],
+                      userProperties: {
+                        "age": 30,
+                        "city": "Beijing",
+                        "subscription": "premium"
+                      }
+                    )
+                  );
+                  _showSnackBar(context, '用户信息已设置为 user_007_bond (Premium用户)');
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -191,7 +202,72 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              // 案例2: 手动上报一个自定义事件
+              // 案例2: 简单设置用户ID
+              MonitoredGestureDetector(
+                identifier: 'set-simple-user-id-button',
+                onTap: () {
+                  FlutterMonitorSDK.instance.setUserId("user_simple_123");
+                  _showSnackBar(context, '用户ID已设置为 user_simple_123');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('设置简单用户ID',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // 案例3: 清除用户信息
+              MonitoredGestureDetector(
+                identifier: 'clear-user-info-button',
+                onTap: () {
+                  FlutterMonitorSDK.instance.clearUserInfo();
+                  _showSnackBar(context, '用户信息已清除');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('清除用户信息',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // 案例4: 设置自定义数据
+              MonitoredGestureDetector(
+                identifier: 'set-custom-data-button',
+                onTap: () {
+                  FlutterMonitorSDK.instance.setCustomData({
+                    'sessionId': 'session_${DateTime.now().millisecondsSinceEpoch}',
+                    'featureFlags': ['new_ui', 'beta_features', 'analytics'],
+                    'appVersion': '1.0.0',
+                    'deviceType': 'mobile',
+                  });
+                  _showSnackBar(context, '自定义数据已设置');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.purple,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('设置自定义数据',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // 案例5: 手动上报一个自定义事件
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.purple.shade100),

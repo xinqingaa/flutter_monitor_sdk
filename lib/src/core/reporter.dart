@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_monitor_sdk/src/core/monitor_config.dart';
-import 'package:http/http.dart' as http;
 
 /// Reporter 是 SDK 的数据心脏，负责收集、丰富、缓存和发送所有监控事件。
 class Reporter {
@@ -14,26 +11,36 @@ class Reporter {
   /// 缓存的设备信息，避免每次上报都重新获取。
   Map<String, dynamic>? _deviceInfo;
 
-  // 例如，最多缓存1000条事件
-  static const int maxQueueSize = 100;
+  /// 运行时用户信息（可动态更新）
+  UserInfo? _runtimeUserInfo;
+
+  /// 运行时自定义数据（可动态更新）
+  Map<String, dynamic>? _runtimeCustomData;
+
+  // 优化：减少缓存大小，避免内存占用过多
+  static const int maxQueueSize = 50;
 
   Reporter(this._config) {
     _init();
   }
 
   void _init() {
-    // 异步获取设备信息
-    _fetchDeviceInfo();
-
-    // MODIFIED: 初始化所有在配置中提供的输出器。
-    for (final output in _config.outputs) {
+    // 初始化所有在配置中提供的输出器
+    for (final output in _config.effectiveOutputs) {
       output.init();
     }
   }
 
+  /// 异步初始化，确保设备信息获取完成
+  Future<void> initAsync() async {
+    // 异步获取设备信息，确保在第一次上报前完成
+    await _fetchDeviceInfo();
+  }
+
   /// 使用 'device_info_plus' 插件异步获取设备信息。
-  /// 你可以在这里自定义需要收集的设备字段。
+  /// 可以在这里自定义需要收集的设备字段。
   Future<void> _fetchDeviceInfo() async {
+    print("🔍 开始获取设备信息");
     final deviceInfoPlugin = DeviceInfoPlugin();
     try {
       if (kIsWeb) {
@@ -83,21 +90,27 @@ class Reporter {
       'data': data,
 
       // --- 以下是 Reporter 自动附加的通用字段 ---
-      // 'timestamp': 事件在客户端被捕获的时间 (UTC)。
+      // 'timestamp': 事件在客户端被捕获的时间 (本地时间，格式化为 YYYY-MM-DD HH:MM:ss)。
       // 来源: Dart 核心库。
-      'timestamp': DateTime.now().toUtc().toIso8601String(),
+      'timestamp': _formatTimestamp(DateTime.now()),
 
-      // 'appKey': 在初始化时配置的应用唯一标识。
-      // 来源: MonitorConfig。
-      'appKey': _config.appKey,
+      // 应用信息（包含 appKey）
+      'appInfo': {
+        'appKey': _config.appInfo.appKey,
+        'appVersion': _config.appInfo.appVersion,
+        'buildNumber': _config.appInfo.buildNumber,
+        'packageName': _config.appInfo.packageName,
+        'appName': _config.appInfo.appName,
+        'channel': _config.appInfo.channel,
+        'environment': _config.appInfo.environment,
+      },
 
-      // 'userId': 当前用户的ID，如果设置了的话。
-      // 来源: MonitorConfig (可通过 setUserId() 修改)。
-      'userId': _config.userId,
+      // 用户信息（优先使用运行时用户信息，否则使用配置中的用户信息）
+      'userInfo': _getEffectiveUserInfo(),
 
-      // 'customData': 开发者设置的自定义全局数据。
-      // 来源: MonitorConfig (可通过 setCustomData() 修改)。
-      'customData': _config.customData,
+      // 'customData': 开发者设置的自定义全局数据（优先使用运行时数据）。
+      // 来源: 运行时数据 > MonitorConfig 配置。
+      'customData': _getEffectiveCustomData(),
 
       // 'platform': 应用运行的平台 (e.g., 'web', 'android', 'ios')。
       // 来源: Flutter 核心库 (kIsWeb, Platform)。
@@ -108,7 +121,7 @@ class Reporter {
       'deviceInfo': _deviceInfo,
     };
     // 将丰富后的事件分发给每一个输出器。
-    for (final output in _config.outputs) {
+    for (final output in _config.effectiveOutputs) {
       try {
         output.add(event);
       } catch (e) {
@@ -118,10 +131,73 @@ class Reporter {
   }
 
 
+  /// 格式化时间戳为 YYYY-MM-DD HH:MM:ss 格式
+  String _formatTimestamp(DateTime dateTime) {
+    final year = dateTime.year.toString();
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final second = dateTime.second.toString().padLeft(2, '0');
+    
+    return '$year-$month-$day $hour:$minute:$second';
+  }
+
+  /// 获取有效的用户信息（优先使用运行时数据）
+  Map<String, dynamic>? _getEffectiveUserInfo() {
+    final userInfo = _runtimeUserInfo ?? _config.userInfo;
+    if (userInfo == null) return null;
+    
+    return {
+      'userId': userInfo.userId,
+      'userType': userInfo.userType,
+      'userTags': userInfo.userTags,
+      'userProperties': userInfo.userProperties,
+    };
+  }
+
+  /// 获取有效的自定义数据（优先使用运行时数据）
+  Map<String, dynamic>? _getEffectiveCustomData() {
+    if (_runtimeCustomData != null) {
+      return _runtimeCustomData;
+    }
+    return _config.customData;
+  }
+
+  /// 动态设置用户信息（运行时更新）
+  void setUserInfo(UserInfo userInfo) {
+    _runtimeUserInfo = userInfo;
+    print("✅ 用户信息已更新: ${userInfo.userId}");
+  }
+
+  /// 动态设置用户ID（简化方法）
+  void setUserId(String userId) {
+    _runtimeUserInfo = UserInfo(userId: userId);
+    print("✅ 用户ID已更新: $userId");
+  }
+
+  /// 动态设置自定义数据（运行时更新）
+  void setCustomData(Map<String, dynamic> data) {
+    _runtimeCustomData = data;
+    print("✅ 自定义数据已更新: $data");
+  }
+
+  /// 清除用户信息（用户登出时调用）
+  void clearUserInfo() {
+    _runtimeUserInfo = null;
+    print("✅ 用户信息已清除");
+  }
+
+  /// 清除自定义数据
+  void clearCustomData() {
+    _runtimeCustomData = null;
+    print("✅ 自定义数据已清除");
+  }
+
   /// 清理资源，在应用关闭时调用。
   void dispose() {
     // 调用所有输出器的 dispose 方法，让它们清理自己的资源。
-    for (final output in _config.outputs) {
+    for (final output in _config.effectiveOutputs) {
       output.dispose();
     }
   }

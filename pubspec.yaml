@@ -1,10 +1,11 @@
 name: flutter_monitor_sdk
-description: "A new Flutter project."
-version: 0.0.1
-homepage:
+description: "A Flutter Monitor SDK for monitoring errors, performance, user behavior and UI jank."
+version: 1.0.0
+homepage: https://github.com/xinqingaa/flutter_monitor_sdk
+repository: https://github.com/xinqingaa/flutter_monitor_sdk
 
 environment:
-  sdk: ^3.7.2
+  sdk: ">=3.0.0 <4.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
@@ -19,6 +20,7 @@ dev_dependencies:
   http: ^1.2.1
   dio: ^5.4.3+1
   device_info_plus: ^11.2.0
+  package_info_plus: ^8.2.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

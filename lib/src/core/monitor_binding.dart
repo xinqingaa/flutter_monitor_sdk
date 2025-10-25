@@ -48,7 +48,11 @@ class MonitorBinding {
 
     // 5. enableJankMonitor 初始化UI卡顿
     if (config.enableJankMonitor) {
-      jankMonitor = JankMonitor(reporter, getCurrentPage: () => _currentPage as String);
+      jankMonitor = JankMonitor(
+        reporter, 
+        getCurrentPage: () => _currentPage as String,
+        config: config.effectiveJankConfig,
+      );
       jankMonitor.init();
     }
 
@@ -69,13 +73,16 @@ class MonitorBinding {
 
   /// 这是创建和设置 MonitorBinding 的主要入口点。
   /// 它由公开的 FlutterMonitorSDK.init() 方法调用。
-  static void init({required MonitorConfig config, required DateTime appStartTime}) {
+  static Future<void> init({required MonitorConfig config, required DateTime appStartTime}) async {
     if (_instance != null) {
       print("警告: MonitorBinding 已经被初始化过了。");
       return;
     }
     // 正确调用私有构造函数并赋值给私有实例
     _instance = MonitorBinding._(config, appStartTime: appStartTime);
+    
+    // 异步初始化Reporter，确保设备信息获取完成
+    await _instance!.reporter.initAsync();
   }
 
   // --- 可供内部访问的服务 ---

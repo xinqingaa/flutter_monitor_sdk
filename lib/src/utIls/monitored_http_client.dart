@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter_monitor_sdk/src/core/reporter.dart';
 

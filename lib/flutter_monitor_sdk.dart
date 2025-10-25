@@ -7,6 +7,7 @@ import 'flutter_monitor_sdk.dart';
 export 'package:flutter_monitor_sdk/src/core/monitor_binding.dart';
 export 'package:flutter_monitor_sdk/src/core/monitor_config.dart';
 export 'package:flutter_monitor_sdk/src/modules/performance_monitor.dart';
+export 'package:flutter_monitor_sdk/src/modules/jank_monitor.dart';
 export 'package:flutter_monitor_sdk/src/utils/monitored_gesture_detector.dart';
 export 'package:flutter_monitor_sdk/src/utils/page_render_monitor.dart';
 export 'package:flutter_monitor_sdk/src/outputs/monitor_output.dart';
@@ -57,19 +58,40 @@ class FlutterMonitorSDK {
       return;
     }
 
-    MonitorBinding.init(config: config, appStartTime: appStartTime);
+    await MonitorBinding.init(config: config, appStartTime: appStartTime);
     _isInitialized = true;
     print("FlutterMonitorSDK initialized successfully.");
   }
 
+
+  /// 动态设置用户ID（运行时更新）
   void setUserId(String userId) {
     if (!_isInitialized) return;
-    MonitorBinding.instance.config.userId = userId;
+    MonitorBinding.instance.reporter.setUserId(userId);
   }
 
+  /// 动态设置用户信息（运行时更新）
+  void setUserInfo(UserInfo userInfo) {
+    if (!_isInitialized) return;
+    MonitorBinding.instance.reporter.setUserInfo(userInfo);
+  }
+
+  /// 动态设置自定义数据（运行时更新）
   void setCustomData(Map<String, dynamic> data) {
     if (!_isInitialized) return;
-    MonitorBinding.instance.config.customData = data;
+    MonitorBinding.instance.reporter.setCustomData(data);
+  }
+
+  /// 清除用户信息（用户登出时调用）
+  void clearUserInfo() {
+    if (!_isInitialized) return;
+    MonitorBinding.instance.reporter.clearUserInfo();
+  }
+
+  /// 清除自定义数据
+  void clearCustomData() {
+    if (!_isInitialized) return;
+    MonitorBinding.instance.reporter.clearCustomData();
   }
 
   void reportEvent(String eventType, Map<String, dynamic> data) {
